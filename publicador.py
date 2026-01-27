@@ -23,7 +23,7 @@ class PublicacionRequest(BaseModel):
 def obtener_prompt_desde_db(user_id):
     try:
         # Reemplaza con la URL real de tu archivo PHP
-        url_puente = f"https://lapapaya.org/api_bridge.php?user_id={user_id}"
+        url_puente = f"https://lapapaya.org/mktg/api_bridge.php?user_id={user_id}"
         
         response = requests.get(url_puente, timeout=10)
         data = response.json()
