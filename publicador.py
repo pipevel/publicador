@@ -1,10 +1,10 @@
-import mysql.connector
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import random
 import urllib.parse
 import os
+import requests # Necesitas agregar 'requests' a tu requirements.txt
 
 app = FastAPI(title="Publicador Dinámico La Papaya")
 
@@ -22,35 +22,19 @@ class PublicacionRequest(BaseModel):
 
 def obtener_prompt_desde_db(user_id):
     try:
-        conn = mysql.connector.connect(
-            host=os.getenv("DB_HOST"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            database=os.getenv("DB_NAME")
-        )
-        cursor = conn.cursor()
+        # Reemplaza con la URL real de tu archivo PHP
+        url_puente = f"https://lapapaya.org/api_bridge.php?user_id={user_id}"
         
-        # Consulta: busca prompts activos para el usuario específico
-        query = """
-            SELECT contenido_prompt 
-            FROM marketing_prompts 
-            WHERE user_id = %s AND activo = 1
-        """
-        cursor.execute(query, (user_id,))
+        response = requests.get(url_puente, timeout=10)
+        data = response.json()
         
-        resultados = cursor.fetchall()
-        cursor.close()
-        conn.close()
+        if "prompts" in data and len(data["prompts"]) > 0:
+            return random.choice(data["prompts"])
+        return None
         
-        if resultados:
-            # Selecciona uno al azar de los resultados (los 30 del mes)
-            return random.choice(resultados)[0]
-        else:
-            return None
-            
     except Exception as e:
-        print(f"Error de conexión a DB: {e}")
-        return "error_db"
+        print(f"Error llamando al puente PHP: {e}")
+        return "error_bridge"
 
 @app.get("/")
 def home():
