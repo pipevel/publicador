@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import random
 import urllib.parse
+import os
 
 app = FastAPI(title="Publicador Dinámico La Papaya")
 
@@ -21,12 +22,11 @@ class PublicacionRequest(BaseModel):
 
 def obtener_prompt_desde_db(user_id):
     try:
-        # IMPORTANTE: Reemplaza con tus credenciales reales de La Papaya
         conn = mysql.connector.connect(
-            host="tu_host_mysql",      # Ej: mysql.lapapaya.org
-            user="tu_usuario",
-            password="tu_password",
-            database="tu_base_de_datos"
+            host=os.getenv("DB_HOST"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_NAME")
         )
         cursor = conn.cursor()
         
