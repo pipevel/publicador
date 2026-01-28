@@ -3,12 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import random
 import urllib.parse
-import os
 import requests 
 
 app = FastAPI(title="Publicador Dinámico La Papaya")
 
-# Configuración de CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,50 +17,58 @@ app.add_middleware(
 class PublicacionRequest(BaseModel):
     user_id: int
 
-def obtener_prompt_desde_db(user_id):
+def obtener_datos_usuario(user_id):
+    """Obtiene tanto el prompt como el sueño desde el bridge PHP"""
     try:
         url_puente = f"https://lapapaya.org/mktg/api_bridge.php?user_id={user_id}"
         response = requests.get(url_puente, timeout=10)
         data = response.json()
         
-        if "prompts" in data and len(data["prompts"]) > 0:
-            return random.choice(data["prompts"])
-        return None
-        
+        # Retornamos todo el diccionario de datos
+        return data
     except Exception as e:
         print(f"Error llamando al puente PHP: {e}")
-        return "error_bridge"
-
-@app.get("/")
-def home():
-    return {"status": "Online", "mensaje": "Motor de Prompts La Papaya listo."}
+        return None
 
 @app.post("/generar-contenido")
 async def generar_contenido(request: PublicacionRequest):
-    prompt_base = obtener_prompt_desde_db(request.user_id)
+    user_data = obtener_datos_usuario(request.user_id)
     
-    if prompt_base == "error_bridge":
-        raise HTTPException(status_code=500, detail="Error al conectar con la base de datos de La Papaya.")
-    
-    if not prompt_base:
-        raise HTTPException(status_code=404, detail="No se encontraron prompts para este usuario.")
+    if not user_data:
+        raise HTTPException(status_code=500, detail="Error al conectar con la base de datos.")
 
+    # Extraer prompt (si no hay, usamos uno por defecto)
+    prompts = user_data.get("prompts", [])
+    prompt_base = random.choice(prompts) if prompts else "Moda circular y sostenibilidad."
+    
+    # Extraer sueño (si no hay, mensaje genérico)
+    user_sueno = user_data.get("sueno", "Emprender en economía circular")
+
+    # 1. Configuración de Post de Texto
     hashtags = "#ModaCircular #LaPapaya #Sostenibilidad"
     prompt_final = f"{prompt_base}\n\nUsa estos hashtags: {hashtags}"
-    
-    # Codificamos los prompts para las URLs
     encoded_prompt = urllib.parse.quote_plus(prompt_final)
     
-    # Prompt específico para imagen con Nano Banana
-    prompt_nano = f"Genera una imagen artística usando el modelo Nano Banana sobre el siguiente concepto: {prompt_base}"
+    # 2. Configuración de Imagen (Nano Banana)
+    prompt_nano = f"Genera una imagen artística estilo Nano Banana sobre: {prompt_base}"
     encoded_nano = urllib.parse.quote_plus(prompt_nano)
+    
+    # 3. Configuración de ODS (Sueño)
+    
+
+[Image of sustainable development goals UN]
+
+    prompt_ods = f"""Actúa como experto en sostenibilidad ONU. Mi sueño es: "{user_sueno}". 
+    Alinéalo con 3 ODS y genera una hoja de ruta técnica para hacerlo realidad."""
+    encoded_ods = urllib.parse.quote_plus(prompt_ods)
     
     return {
         "prompt_generado": prompt_final,
         "links_ayuda": {
             "chatgpt_texto": f"https://chat.openai.com/?model=gpt-4&prompt={encoded_prompt}",
-            "chatgpt_imagen": f"https://chat.openai.com/?model=gpt-4&prompt=Haz+una+imagen+cuadrada+para+redes+sociales+basada+en:+{encoded_prompt}",
+            "chatgpt_imagen": f"https://chat.openai.com/?model=gpt-4&prompt=Imagen+para+redes:+{encoded_prompt}",
             "gemini_nano_banana": f"https://gemini.google.com/app?prompt={encoded_nano}",
+            "ods_link": f"https://chatgpt.com/?q={encoded_ods}",
             "canva": "https://www.canva.com/design/DAGhSGpcZvk/edit"
         }
     }
