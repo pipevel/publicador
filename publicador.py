@@ -68,7 +68,7 @@ Genera una hoja de ruta técnica para que este sueño sea una realidad sostenibl
         "prompt_generado": prompt_final,
         "links_ayuda": {
             "chatgpt_texto": f"https://chat.openai.com/?model=gpt-4&prompt={encoded_prompt}",
-            "chatgpt_imagen": f"https://chat.openai.com/?model=gpt-4&prompt=Haz+una+imagen+cuadrada+para+redes+sociales+basada+en:+{encoded_prompt}",
+            "chatgpt_imagen": f"https://chat.openai.com/?model=gpt-4&prompt=Haz+una+imagen+cuadrada+para+redes+sociales+basada+en:+Editorial+photography+soft+daylight+muted+colors+realistic+textures+minimal+composition+documentary+style{encoded_prompt}",
             "gemini_nano_banana": f"https://gemini.google.com/app?prompt={encoded_nano}",
             "ods_link": f"https://chatgpt.com/?q={encoded_ods}",
             "canva": "https://www.canva.com/design/DAGhSGpcZvk/edit"
