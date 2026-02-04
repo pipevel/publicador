@@ -10,8 +10,8 @@ app = FastAPI(title="Publicador Dinámico Multi-Red La Papaya")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["*"],
     allow_headers=["*"],
+    allow_methods=["*"],
 )
 
 class PublicacionRequest(BaseModel):
@@ -36,78 +36,46 @@ async def generar_contenido(request: PublicacionRequest):
         raise HTTPException(status_code=500, detail="Error al conectar con el Bridge.")
 
     prompts = user_data.get("prompts", [])
-    prompt_base = random.choice(prompts) if prompts else "Economía circular y colaboración social."
-    user_sueno = user_data.get("sueno", "Emprender con propósito")
+    prompt_base = random.choice(prompts) if prompts else "Sostenibilidad y comunidad urbana."
+    user_sueno = user_data.get("sueno", "Emprender con propósito social")
     platform = request.target_platform.lower()
 
-    # --- Lógica de Personalización Expandida ---
+    # --- Configuración de Estilos por Plataforma ---
     config_plataformas = {
-        "instagram": {
-            "estilo": "Visual, inspirador y cercano. Usa emojis. Editorial+photography+soft+daylight+muted+colors+realistic+textures+minimal+composition+documentary+style{encoded_prompt}",",
-            "formato": "Post cuadrado o Reel.",
-            "hashtags": "#LaPapaya #Sostenibilidad #CaliCo",
-            "img_style": "Estética limpia, colores vibrantes, luz natural."
-        },
-        "facebook": {
-            "estilo": "Informativo y comunitario. Ideal para grupos. Editorial+photography+soft+daylight+muted+colors+realistic+textures+minimal+composition+documentary+style{encoded_prompt}",",
-            "formato": "Post con imagen horizontal.",
-            "hashtags": "#Comunidad #Cali #ProyectosSociales",
-            "img_style": "Personas colaborando, ambiente real."
-        },
-        "linkedin": {
-            "estilo": "Profesional, estratégico y orientado a impacto ESG. Editorial+photography+soft+daylight+muted+colors+realistic+textures+minimal+composition+documentary+style{encoded_prompt}",",
-            "formato": "Post de opinión profesional.",
-            "hashtags": "#Liderazgo #ImpactoSocial #ESG #Networking",
-            "img_style": "Minimalista, profesional, alta calidad."
-        },
-        "tiktok": {
-            "estilo": "Dinámico, con hook fuerte y lenguaje de tendencia. Editorial+photography+soft+daylight+muted+colors+realistic+textures+minimal+composition+documentary+style{encoded_prompt}",",
-            "formato": "Guion para video vertical 9:16.",
-            "hashtags": "#Trend #EcoTips #Cali #StoryTime",
-            "img_style": "Estilo POV, dinámico, urbano."
-        },
-        "twitter": {
-            "estilo": "Conciso, directo y provocador de debate. Máximo 280 caracteres. Editorial+photography+soft+daylight+muted+colors+realistic+textures+minimal+composition+documentary+style{encoded_prompt}",",
-            "formato": "Tweet o inicio de hilo.",
-            "hashtags": "#LaPapaya #Cali #Sostenible",
-            "img_style": "Infografía simple, fotografía de alto contraste."
-        },
-        "whatsapp": {
-            "estilo": "Personal, urgente y muy directo. Formato de 'Estado'.Editorial+photography+soft+daylight+muted+colors+realistic+textures+minimal+composition+documentary+style{encoded_prompt}",",
-            "formato": "Texto corto con invitación a chatear.",
-            "hashtags": "",
-            "img_style": "Cercano, tipo selfie o foto de proceso real."
-        }
+        "instagram": {"estilo": "Visual e inspirador", "hashtags": "#LaPapaya #Sostenibilidad #CaliCo"},
+        "facebook": {"estilo": "Comunitario y conversacional", "hashtags": "#Comunidad #Cali #Proyectos"},
+        "linkedin": {"estilo": "Profesional y estratégico", "hashtags": "#ImpactoSocial #ESG #Networking"},
+        "tiktok": {"estilo": "Dinámico con guion de video", "hashtags": "#Trend #EcoTips #Cali"},
+        "twitter": {"estilo": "Directo y conciso (280 caracteres)", "hashtags": "#LaPapaya #Cali"},
+        "whatsapp": {"estilo": "Personal y directo para Estados", "hashtags": ""}
     }
 
     conf = config_plataformas.get(platform, config_plataformas["instagram"])
 
-    # 1. Prompt de Texto
-    instruccion_ia = f"""Actúa como experto en marketing digital. Genera contenido para {platform.upper()}.
-Estilo: {conf['estilo']}
-Formato: {conf['formato']}
-Concepto: {prompt_base}
-Conecta con este sueño: "{user_sueno}".
-Incluye un Call to Action claro.
-Hashtags: {conf['hashtags']}"""
-
-    encoded_prompt = urllib.parse.quote_plus(instruccion_ia)
+    # 1. Prompt de Texto (Copywriting)
+    instruccion_ia = f"Actúa como experto en marketing. Genera contenido para {platform.upper()}. Estilo: {conf['estilo']}. Concepto: {prompt_base}. Conecta con el sueño: '{user_sueno}'. Hashtags: {conf['hashtags']}"
+    encoded_text_prompt = urllib.parse.quote_plus(instruccion_ia)
     
-    # 2. Prompt de Imagen
-    prompt_img_final = f"{conf['img_style']} concepto: {prompt_base}. Professional photography."
-    encoded_img = urllib.parse.quote_plus(prompt_img_final)
+    # 2. COMPONENTE SOLICITADO: Estilo Visual Editorial
+    # Agregamos los parámetros de composición mínima, texturas realistas y estilo documental
+    estilo_editorial = "Editorial photography, soft daylight, muted colors, realistic textures, minimal composition, documentary style"
+    
+    # Prompt para Generadores de Imagen (DALL-E / Gemini)
+    prompt_imagen_completo = f"{estilo_editorial} based on: {prompt_base}"
+    encoded_img_prompt = urllib.parse.quote_plus(prompt_imagen_completo)
     
     # 3. Prompt de ODS
-    prompt_ods = f"Analiza este sueño: '{user_sueno}' bajo el marco de los ODS de la ONU."
+    prompt_ods = f"Analiza este sueño: '{user_sueno}' bajo los ODS de la ONU."
     encoded_ods = urllib.parse.quote_plus(prompt_ods)
     
     return {
         "platform_selected": platform,
         "prompt_generado": instruccion_ia,
         "links_ayuda": {
-            "chatgpt_texto": f"https://chat.openai.com/?model=gpt-4&prompt={encoded_prompt}",
-            "chatgpt_imagen": f"https://chat.openai.com/?model=gpt-4&prompt=Genera+una+imagen+para+{platform}+estilo+{encoded_img}",
-            "gemini_nano_banana": f"https://gemini.google.com/app?prompt={encoded_img}",
+            "chatgpt_texto": f"https://chat.openai.com/?model=gpt-4&prompt={encoded_text_prompt}",
+            # Aquí se integra el componente de fotografía editorial solicitado
+            "chatgpt_imagen": f"https://chat.openai.com/?model=gpt-4&prompt=Generate+a+square+social+media+image+with:+{encoded_img_prompt}",
+            "gemini_nano_banana": f"https://gemini.google.com/app?prompt={encoded_img_prompt}",
             "ods_link": f"https://chatgpt.com/?q={encoded_ods}",
             "canva": "https://www.canva.com/design/DAGhSGpcZvk/edit"
         }
