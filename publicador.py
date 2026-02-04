@@ -14,6 +14,15 @@ app.add_middleware(
     allow_methods=["*"],
 )
 
+# --- NUEVA RUTA RAÍZ ---
+@app.get("/")
+async def root():
+    return {
+        "mensaje": "Servidor de Publicación La Papaya activo",
+        "estado": "Online",
+        "endpoints_disponibles": ["/generar-contenido (POST)", "/docs (Swagger)"]
+    }
+
 class PublicacionRequest(BaseModel):
     user_id: int
     target_platform: str = "instagram"
@@ -56,11 +65,8 @@ async def generar_contenido(request: PublicacionRequest):
     instruccion_ia = f"Actúa como experto en marketing. Genera contenido para {platform.upper()}. Estilo: {conf['estilo']}. Concepto: {prompt_base}. Conecta con el sueño: '{user_sueno}'. Hashtags: {conf['hashtags']}"
     encoded_text_prompt = urllib.parse.quote_plus(instruccion_ia)
     
-    # 2. COMPONENTE SOLICITADO: Estilo Visual Editorial
-    # Agregamos los parámetros de composición mínima, texturas realistas y estilo documental
+    # 2. Estilo Visual Editorial
     estilo_editorial = "Editorial photography, soft daylight, muted colors, realistic textures, minimal composition, documentary style"
-    
-    # Prompt para Generadores de Imagen (DALL-E / Gemini)
     prompt_imagen_completo = f"{estilo_editorial} based on: {prompt_base}"
     encoded_img_prompt = urllib.parse.quote_plus(prompt_imagen_completo)
     
@@ -73,7 +79,6 @@ async def generar_contenido(request: PublicacionRequest):
         "prompt_generado": instruccion_ia,
         "links_ayuda": {
             "chatgpt_texto": f"https://chat.openai.com/?model=gpt-4&prompt={encoded_text_prompt}",
-            # Aquí se integra el componente de fotografía editorial solicitado
             "chatgpt_imagen": f"https://chat.openai.com/?model=gpt-4&prompt=Generate+a+square+social+media+image+with:+{encoded_img_prompt}",
             "gemini_nano_banana": f"https://gemini.google.com/app?prompt={encoded_img_prompt}",
             "ods_link": f"https://chatgpt.com/?q={encoded_ods}",
