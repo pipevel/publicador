@@ -43,37 +43,37 @@ async def generar_contenido(request: PublicacionRequest):
     # --- Lógica de Personalización Expandida ---
     config_plataformas = {
         "instagram": {
-            "estilo": "Visual, inspirador y cercano. Usa emojis.",
+            "estilo": "Visual, inspirador y cercano. Usa emojis. Editorial+photography+soft+daylight+muted+colors+realistic+textures+minimal+composition+documentary+style{encoded_prompt}",",
             "formato": "Post cuadrado o Reel.",
             "hashtags": "#LaPapaya #Sostenibilidad #CaliCo",
             "img_style": "Estética limpia, colores vibrantes, luz natural."
         },
         "facebook": {
-            "estilo": "Informativo y comunitario. Ideal para grupos.",
+            "estilo": "Informativo y comunitario. Ideal para grupos. Editorial+photography+soft+daylight+muted+colors+realistic+textures+minimal+composition+documentary+style{encoded_prompt}",",
             "formato": "Post con imagen horizontal.",
             "hashtags": "#Comunidad #Cali #ProyectosSociales",
             "img_style": "Personas colaborando, ambiente real."
         },
         "linkedin": {
-            "estilo": "Profesional, estratégico y orientado a impacto ESG.",
+            "estilo": "Profesional, estratégico y orientado a impacto ESG. Editorial+photography+soft+daylight+muted+colors+realistic+textures+minimal+composition+documentary+style{encoded_prompt}",",
             "formato": "Post de opinión profesional.",
             "hashtags": "#Liderazgo #ImpactoSocial #ESG #Networking",
             "img_style": "Minimalista, profesional, alta calidad."
         },
         "tiktok": {
-            "estilo": "Dinámico, con hook fuerte y lenguaje de tendencia.",
+            "estilo": "Dinámico, con hook fuerte y lenguaje de tendencia. Editorial+photography+soft+daylight+muted+colors+realistic+textures+minimal+composition+documentary+style{encoded_prompt}",",
             "formato": "Guion para video vertical 9:16.",
             "hashtags": "#Trend #EcoTips #Cali #StoryTime",
             "img_style": "Estilo POV, dinámico, urbano."
         },
         "twitter": {
-            "estilo": "Conciso, directo y provocador de debate. Máximo 280 caracteres.",
+            "estilo": "Conciso, directo y provocador de debate. Máximo 280 caracteres. Editorial+photography+soft+daylight+muted+colors+realistic+textures+minimal+composition+documentary+style{encoded_prompt}",",
             "formato": "Tweet o inicio de hilo.",
             "hashtags": "#LaPapaya #Cali #Sostenible",
             "img_style": "Infografía simple, fotografía de alto contraste."
         },
         "whatsapp": {
-            "estilo": "Personal, urgente y muy directo. Formato de 'Estado'.",
+            "estilo": "Personal, urgente y muy directo. Formato de 'Estado'.Editorial+photography+soft+daylight+muted+colors+realistic+textures+minimal+composition+documentary+style{encoded_prompt}",",
             "formato": "Texto corto con invitación a chatear.",
             "hashtags": "",
             "img_style": "Cercano, tipo selfie o foto de proceso real."
