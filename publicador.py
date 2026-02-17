@@ -29,13 +29,16 @@ class PublicacionRequest(BaseModel):
 
 def obtener_datos_usuario(user_id):
     try:
-        # Pasamos todo por la URL para máxima compatibilidad
-        url = f"https://lapapaya.org/mktg/api_bridge.php?action=python_query&user_id={user_id}"
-        response = requests.get(url, timeout=10) # Usar GET simple
+        # Forzamos los parámetros en la URL (Query String)
+        url_puente = f"https://lapapaya.org/mktg/api_bridge.php?action=python_query&user_id={user_id}"
+        
+        # Realizamos el GET sin enviar cabeceras de Content-Type que confundan al servidor
+        response = requests.get(url_puente, timeout=15)
         response.raise_for_status()
+        
         return response.json()
     except Exception as e:
-        print(f"Error en el puente: {e}")
+        print(f"Error llamando al puente PHP: {e}")
         return None
 
 @app.post("/generar-contenido")
