@@ -4,8 +4,9 @@ import random
 import urllib.parse
 import requests 
 
-app = FastAPI(title="Publicador Dinámico La Papaya")
+app = FastAPI(title="Publicador La Papaya")
 
+# Configuración de CORS para que tu web pueda hablar con Render
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,61 +15,67 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-async def root():
-    return {"estado": "Online", "mensaje": "Servidor de La Papaya listo"}
-
-def obtener_datos_usuario(user_id):
+def obtener_datos_del_puente(user_id):
+    """Consulta el api_bridge.php para traer los sueños y prompts del usuario"""
     try:
-        # Llamamos al puente usando GET que es lo más estable
-        url_puente = f"https://lapapaya.org/mktg/api_bridge.php?action=python_query&user_id={user_id}"
-        response = requests.get(url_puente, timeout=15)
+        # Usamos GET porque tu puente ya está validado para este método
+        url = f"https://lapapaya.org/mktg/api_bridge.php?action=python_query&user_id={user_id}"
+        response = requests.get(url, timeout=10)
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        print(f"Error en el puente PHP: {e}")
+        print(f"Error conectando con el puente: {e}")
         return None
 
 @app.post("/generar-contenido")
 async def generar_contenido(user_id: int = Form(...), target_platform: str = Form(...)):
-    # 1. Obtener datos desde el Bridge PHP
-    user_data = obtener_datos_usuario(user_id)
+    # 1. Obtener los datos reales de tu base de datos a través del puente
+    datos = obtener_datos_del_puente(user_id)
     
-    if not user_data or user_data.get("status") != "success":
-        raise HTTPException(status_code=500, detail="No se pudo obtener información del usuario.")
+    if not datos or datos.get("status") != "success":
+        raise HTTPException(status_code=500, detail="No se pudo obtener la info del puente PHP")
 
-    # 2. Extraer información
-    prompts = user_data.get("prompts", [])
-    prompt_base = random.choice(prompts) if prompts else "Sostenibilidad y comunidad urbana."
-    user_sueno = user_data.get("sueno", "Emprender con propósito social")
-    platform = target_platform.lower()
-
-    # 3. Configuración por plataforma
-    config_plataformas = {
-        "instagram": {"estilo": "Visual e inspirador", "hashtags": "#LaPapaya #Sostenibilidad"},
-        "facebook": {"estilo": "Comunitario y conversacional", "hashtags": "#Comunidad #Cali"},
-        "linkedin": {"estilo": "Profesional y estratégico", "hashtags": "#ImpactoSocial #Networking"},
-        "tiktok": {"estilo": "Dinámico con guion de video", "hashtags": "#EcoTips #Trend"},
-        "twitter": {"estilo": "Directo y conciso", "hashtags": "#LaPapaya #Cali"},
-        "whatsapp": {"estilo": "Personal para estados", "hashtags": ""}
+    # 2. Extraer la info (usando los campos que definimos en api_bridge.php)
+    prompts_disponibles = datos.get("prompts", [])
+    # Elegimos un prompt al azar de los que el usuario tiene activos
+    base_prompt = random.choice(prompts_disponibles) if prompts_disponibles else "Emprendimiento sostenible"
+    sueno_usuario = datos.get("sueno", "Un mundo mejor")
+    
+    # 3. Personalizar según la red social elegida
+    plataforma = target_platform.lower()
+    estilos = {
+        "instagram": "visual, emocional y lleno de energía",
+        "facebook": "cercano, comunitario y narrativo",
+        "linkedin": "profesional, estratégico y con autoridad",
+        "tiktok": "dinámico, divertido y con ritmo de video",
+        "whatsapp": "directo, personal y motivador"
     }
+    estilo = estilos.get(plataforma, "creativo")
 
-    conf = config_plataformas.get(platform, config_plataformas["instagram"])
+    # 4. Crear el super-prompt para ChatGPT/IA
+    texto_ia = (
+        f"Actúa como un experto en marketing. Crea un post para {plataforma.upper()} "
+        f"con un tono {estilo}. El tema central es: {base_prompt}. "
+        f"Incluye la esencia de este sueño: {sueno_usuario}. "
+        f"Termina con un llamado a la acción potente."
+    )
+    
+    # 5. Codificar para que los enlaces funcionen con espacios y tildes
+    encoded_text = urllib.parse.quote(texto_ia)
+    encoded_img = urllib.parse.quote(f"Cinematic photo, {base_prompt}, high resolution, sustainability style")
 
-    # 4. Construcción de Prompts para la IA
-    instruccion_ia = f"Genera un post para {platform.upper()}. Estilo: {conf['estilo']}. Concepto: {prompt_base}. Sueño: '{user_sueno}'. Hashtags: {conf['hashtags']}"
-    encoded_text = urllib.parse.quote_plus(instruccion_ia)
-    
-    prompt_img = f"Editorial photography, realistic style, based on: {prompt_base}"
-    encoded_img = urllib.parse.quote_plus(prompt_img)
-    
-    # 5. Respuesta final
+    # 6. Devolver la respuesta que espera tu mktg.php
     return {
-        "platform_selected": platform,
-        "prompt_generado": instruccion_ia,
+        "status": "success",
+        "platform_selected": plataforma,
+        "prompt_generado": texto_ia,
         "links_ayuda": {
-            "chatgpt_texto": f"https://chat.openai.com/?model=gpt-4&prompt={encoded_text}",
-            "chatgpt_imagen": f"https://chat.openai.com/?model=gpt-4&prompt=Generate+image:+{encoded_img}",
+            "chatgpt_texto": f"https://chat.openai.com/?q={encoded_text}",
+            "chatgpt_imagen": f"https://chat.openai.com/?q=Genera+una+imagen+para:+{encoded_img}",
             "gemini_nano_banana": f"https://gemini.google.com/app?prompt={encoded_img}"
         }
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=10000)
