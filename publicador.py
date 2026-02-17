@@ -29,17 +29,13 @@ class PublicacionRequest(BaseModel):
 
 def obtener_datos_usuario(user_id):
     try:
-        # Forzamos la acción en la URL para evitar ambigüedades
-        url_puente = f"https://lapapaya.org/mktg/api_bridge.php?action=python_query&user_id={user_id}"
-        
-        # Realizamos un GET explícito sin cuerpo de mensaje (body)
-        # Esto elimina el error 415 de "Unsupported Media Type"
-        response = requests.get(url_puente, timeout=15)
-        
+        # Pasamos todo por la URL para máxima compatibilidad
+        url = f"https://lapapaya.org/mktg/api_bridge.php?action=python_query&user_id={user_id}"
+        response = requests.get(url, timeout=10) # Usar GET simple
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        print(f"Error crítico llamando al puente PHP: {e}")
+        print(f"Error en el puente: {e}")
         return None
 
 @app.post("/generar-contenido")
