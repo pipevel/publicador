@@ -29,8 +29,8 @@ class PublicacionRequest(BaseModel):
 
 def obtener_datos_usuario(user_id):
     try:
-        # Añadimos explícitamente la acción en la URL para que PHP sepa qué responder
         url_puente = f"https://lapapaya.org/mktg/api_bridge.php?action=python_query&user_id={user_id}"
+        # Usar un GET simple sin body ni cabeceras de Content-Type complejas
         response = requests.get(url_puente, timeout=10)
         response.raise_for_status()
         return response.json()
