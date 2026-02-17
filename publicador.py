@@ -6,7 +6,7 @@ import requests
 
 app = FastAPI(title="Publicador La Papaya")
 
-# Configuración de CORS para que tu web pueda hablar con Render
+# Configuración de CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,9 +16,9 @@ app.add_middleware(
 )
 
 def obtener_datos_del_puente(user_id):
-    """Consulta el api_bridge.php para traer los sueños y prompts del usuario"""
+    """Consulta el api_bridge.php de La Papaya"""
     try:
-        # Usamos GET porque tu puente ya está validado para este método
+        # Usamos la URL que ya probamos que funciona con user_id=2
         url = f"https://lapapaya.org/mktg/api_bridge.php?action=python_query&user_id={user_id}"
         response = requests.get(url, timeout=10)
         response.raise_for_status()
@@ -28,43 +28,46 @@ def obtener_datos_del_puente(user_id):
         return None
 
 @app.post("/generar-contenido")
-async def generar_contenido(user_id: int = Form(...), target_platform: str = Form(...)):
-    # 1. Obtener los datos reales de tu base de datos a través del puente
+async def generar_contenido(
+    user_id: int = Form(...), 
+    target_platform: str = Form(...)
+):
+    # 1. Obtener datos de la DB a través del puente
     datos = obtener_datos_del_puente(user_id)
     
     if not datos or datos.get("status") != "success":
-        raise HTTPException(status_code=500, detail="No se pudo obtener la info del puente PHP")
+        raise HTTPException(status_code=500, detail="Error al conectar con la base de datos de La Papaya")
 
-    # 2. Extraer la info (usando los campos que definimos en api_bridge.php)
+    # 2. Extraer información del usuario
     prompts_disponibles = datos.get("prompts", [])
-    # Elegimos un prompt al azar de los que el usuario tiene activos
-    base_prompt = random.choice(prompts_disponibles) if prompts_disponibles else "Emprendimiento sostenible"
-    sueno_usuario = datos.get("sueno", "Un mundo mejor")
+    base_prompt = random.choice(prompts_disponibles) if prompts_disponibles else "Emprendimiento y sostenibilidad"
+    sueno_usuario = datos.get("sueno", "Un futuro mejor")
     
-    # 3. Personalizar según la red social elegida
+    # 3. Personalización por plataforma
     plataforma = target_platform.lower()
     estilos = {
-        "instagram": "visual, emocional y lleno de energía",
-        "facebook": "cercano, comunitario y narrativo",
-        "linkedin": "profesional, estratégico y con autoridad",
-        "tiktok": "dinámico, divertido y con ritmo de video",
-        "whatsapp": "directo, personal y motivador"
+        "instagram": "visual y emocional",
+        "facebook": "comunitario y cercano",
+        "linkedin": "profesional y estratégico",
+        "tiktok": "dinámico y divertido",
+        "twitter": "conciso y directo",
+        "whatsapp": "personal y motivador"
     }
     estilo = estilos.get(plataforma, "creativo")
 
-    # 4. Crear el super-prompt para ChatGPT/IA
+    # 4. Construcción del Prompt Maestro
     texto_ia = (
-        f"Actúa como un experto en marketing. Crea un post para {plataforma.upper()} "
-        f"con un tono {estilo}. El tema central es: {base_prompt}. "
-        f"Incluye la esencia de este sueño: {sueno_usuario}. "
-        f"Termina con un llamado a la acción potente."
+        f"Actúa como experto en marketing. Crea un post para {plataforma.upper()} "
+        f"con tono {estilo}. Tema: {base_prompt}. "
+        f"Incluye la esencia de: {sueno_usuario}. "
+        f"Agrega 3 hashtags relevantes y un llamado a la acción."
     )
     
-    # 5. Codificar para que los enlaces funcionen con espacios y tildes
+    # 5. Codificación para URLs
     encoded_text = urllib.parse.quote(texto_ia)
-    encoded_img = urllib.parse.quote(f"Cinematic photo, {base_prompt}, high resolution, sustainability style")
+    encoded_img = urllib.parse.quote(f"Professional photography, {base_prompt}, sustainability style, 4k")
 
-    # 6. Devolver la respuesta que espera tu mktg.php
+    # 6. Respuesta para el mktg.php
     return {
         "status": "success",
         "platform_selected": plataforma,
