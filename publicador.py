@@ -20,17 +20,13 @@ async def generar_contenido(
 ):
 
     try:
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "application/json"
-        }
-
         response = requests.post(
-            "https://lapapaya.org/mktg/api_bridge.php",
-            data={"user_id": user_id},
-            headers=headers,
-            timeout=10
-        )
+    "https://lapapaya.org/mktg/api_bridge.php",
+    data={"user_id": user_id},
+    timeout=10
+)
+
+
 
         if response.status_code != 200:
             raise HTTPException(
