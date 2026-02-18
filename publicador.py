@@ -6,6 +6,7 @@ import requests
 
 app = FastAPI(title="Publicador La Papaya")
 
+# Permitir que lapapaya.org hable con este servidor
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,10 +15,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Ruta raíz para que Render confirme que la app está "viva"
+# Ruta de prueba para Render
 @app.get("/")
 async def root():
-    return {"status": "online", "message": "Publicador La Papaya Funcionando"}
+    return {"status": "online", "message": "Servidor listo"}
 
 def obtener_datos_usuario(user_id):
     """Consulta el puente PHP con headers de navegador para evitar bloqueos"""
@@ -32,32 +33,41 @@ def obtener_datos_usuario(user_id):
         response.raise_for_status() 
         return response.json()
     except Exception as e:
-        print(f"Error en el puente: {e}")
+        print(f"Error en puente: {e}")
         return None
 
 @app.post("/generar-contenido")
-async def generar_contenido(user_id: int = Form(...), target_platform: str = Form(...)):
+async def generar_contenido(
+    user_id: int = Form(...), 
+    target_platform: str = Form(...)
+):
+    # 1. Traer datos reales de la DB
     user_data = obtener_datos_usuario(user_id)
     
     if not user_data or user_data.get("status") != "success":
-        # Este es el error que capturará tu JavaScript
-        raise HTTPException(status_code=500, detail="Error de sincronización con La Papaya")
+        # Este es el error que atrapa tu alert en la web
+        raise HTTPException(status_code=500, detail="No se pudo sincronizar con la base de datos de La Papaya")
 
+    # 2. Extraer sueños y prompts
     prompts = user_data.get("prompts", [])
     prompt_base = random.choice(prompts) if prompts else "Sostenibilidad y comunidad"
     user_sueno = user_data.get("sueno", "Emprender con propósito")
     
-    # Construcción del Prompt
-    texto_ia = f"Genera un post para {target_platform.upper()}. Tema: {prompt_base}. Sueño: {user_sueno}."
+    # 3. Construcción del Prompt Maestro
+    texto_ia = (
+        f"Actúa como experto en marketing. Crea un post para {target_platform.upper()}. "
+        f"Tema: {prompt_base}. Conéctalo con este sueño: {user_sueno}. Incluye CTA y hashtags."
+    )
+    
     encoded_text = urllib.parse.quote(texto_ia)
-    encoded_img = urllib.parse.quote(f"Professional photography, {prompt_base}")
+    encoded_img = urllib.parse.quote(f"Professional photography, {prompt_base}, high quality")
 
     return {
         "status": "success",
         "prompt_generado": texto_ia,
         "links_ayuda": {
             "chatgpt_texto": f"https://chat.openai.com/?q={encoded_text}",
-            "chatgpt_imagen": f"https://chat.openai.com/?q=Genera+imagen:+{encoded_img}",
+            "chatgpt_imagen": f"https://chat.openai.com/?q=Genera+imagen+para:+{encoded_img}",
             "gemini_nano_banana": f"https://gemini.google.com/app?prompt={encoded_img}"
         }
     }
