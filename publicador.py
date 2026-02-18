@@ -15,24 +15,26 @@ app.add_middleware(
 
 @app.post("/generar-contenido")
 async def generar_contenido(user_id: int = Form(...), target_platform: str = Form(...)):
-    # 1. Intentar conectar con la base de datos de La Papaya
     try:
-        # Asegúrate de que esta URL sea exactamente la que configuraste en tu servidor
-        url = f"https://lapapaya.org/mktg/api_bridge.php?action=python_query&user_id={user_id}"
+        # Forzamos que la URL lleve el ID claramente
+        url = f"https://lapapaya.org/mktg/api_bridge.php?user_id={user_id}"
         headers = {'User-Agent': 'Mozilla/5.0'}
+        
         response = requests.get(url, headers=headers, timeout=10)
         
-        # Esto imprimirá en Render qué está diciendo el PHP (útil para debugear)
-        print(f"Respuesta PHP: {response.text}") 
+        # LOG PARA RENDER: Esto te dirá qué está respondiendo el PHP exactamente
+        print(f"DEBUG PHP: {response.text}") 
         
         user_data = response.json()
     except Exception as e:
-        print(f"Error de parsing: {e}")
-        # Este es el mensaje que verás en el alert de la web
-        raise HTTPException(status_code=500, detail="El puente PHP devolvió un formato incorrecto")
+        # Si el PHP falla, devolvemos el error exacto para saber qué pasa
+        raise HTTPException(status_code=500, detail=f"Error en puente PHP: {str(e)}")
 
     if user_data.get("status") != "success":
-        raise HTTPException(status_code=500, detail="Usuario no encontrado en la base de datos")
+        # Aquí es donde te salía "Usuario no encontrado"
+        raise HTTPException(status_code=500, detail=f"PHP dice: {user_data.get('error', 'Error desconocido')}")
+
+    # ... resto del código igual ...
 
     # 2. Generar el prompt basado en los datos reales del usuario
     prompts = user_data.get("prompts", [])
