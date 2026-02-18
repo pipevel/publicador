@@ -1,11 +1,10 @@
 from fastapi import FastAPI, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
-import requests
 import random
 import urllib.parse
+import json
 
 app = FastAPI()
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,51 +15,12 @@ app.add_middleware(
 @app.post("/generar-contenido")
 async def generar_contenido(
     user_id: int = Form(...),
-    target_platform: str = Form(...)
+    target_platform: str = Form(...),
+    sueno: str = Form("Emprender con propósito"),
+    prompts: str = Form("[]")
 ):
-
-    try:
-        response = requests.get(
-    "https://lapapaya.org/mktg/api_bridge.php",
-    params={"user_id": user_id},
-    timeout=10
-)
-
-
-
-
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=500,
-                detail=f"PHP error {response.status_code}: {response.text}"
-            )
-
-        try:
-            user_data = response.json()
-        except Exception:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Respuesta no es JSON válido: {response.text}"
-            )
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error en conexión con puente PHP: {str(e)}"
-        )
-
-    # Validación de respuesta del PHP
-    if user_data.get("status") != "success":
-        error_msg = user_data.get("error", "Usuario no encontrado")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error de base de datos: {error_msg}"
-        )
-
-    # Generar contenido
-    prompts = user_data.get("prompts") or []
-    prompt_base = random.choice(prompts) if prompts else "Sostenibilidad y comunidad"
-    sueno = user_data.get("sueno", "Emprender con propósito")
+    prompts_list = json.loads(prompts)
+    prompt_base = random.choice(prompts_list) if prompts_list else "Sostenibilidad y comunidad"
 
     texto_ia = (
         f"Genera un post optimizado para {target_platform.upper()}. "
@@ -76,3 +36,10 @@ async def generar_contenido(
             "gemini": f"https://gemini.google.com/app?prompt={urllib.parse.quote(prompt_base)}"
         }
     }
+```
+
+---
+
+## El nuevo flujo
+```
+mktg.php → consulta MySQL local → pasa datos al JS → JS llama Render → Render genera contenido
