@@ -15,24 +15,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Agregamos una ruta raíz para que Render sepa que el servicio está vivo
+@app.get("/")
+async def root():
+    return {"status": "online", "message": "Servidor de La Papaya listo"}
+
 def obtener_datos_usuario(user_id):
-    """Consulta el puente PHP usando un GET simple para evitar el error 415"""
+    """Consulta el puente PHP de forma segura"""
     try:
-        # Simulamos un navegador para que el servidor PHP no bloquee la petición
+        # Simulamos un navegador para evitar el error 415
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'Accept': 'application/json'
         }
         url = f"https://lapapaya.org/mktg/api_bridge.php?action=python_query&user_id={user_id}"
         
-        # Petición GET limpia y directa
+        # Realizamos la petición GET simple
         response = requests.get(url, headers=headers, timeout=15)
-        
-        # Si el servidor responde con error (como el 415 anterior), esto lo capturará
         response.raise_for_status() 
         return response.json()
     except Exception as e:
-        print(f"Error detallado en la conexión con PHP: {e}")
+        print(f"Error en el puente PHP: {e}")
         return None
 
 @app.post("/generar-contenido")
@@ -40,25 +43,25 @@ async def generar_contenido(
     user_id: int = Form(...), 
     target_platform: str = Form(...)
 ):
-    # 1. Obtener datos desde PHP (Puente validado para ID 2)
+    # 1. Obtener datos desde PHP
     user_data = obtener_datos_usuario(user_id)
     
     if not user_data or user_data.get("status") != "success":
-        # Este es el error 500 que viste en tus logs
-        raise HTTPException(status_code=500, detail="El puente PHP rechazó la conexión o el ID no es válido.")
+        # Si esto falla, verás el error en tu web
+        raise HTTPException(status_code=500, detail="No se pudo sincronizar con la base de datos de La Papaya")
 
-    # 2. Extraer información (Sueños y Prompts)
+    # 2. Extraer información
     prompts = user_data.get("prompts", [])
-    prompt_base = random.choice(prompts) if prompts else "Sostenibilidad y comunidad urbana"
+    prompt_base = random.choice(prompts) if prompts else "Sostenibilidad y comunidad"
     user_sueno = user_data.get("sueno", "Emprender con propósito")
     platform = target_platform.lower()
 
-    # 3. Construcción de los textos para la IA
+    # 3. Construcción de los textos
     instruccion_ia = f"Genera un post para {platform.upper()}. Tema: {prompt_base}. Sueño: {user_sueno}."
     encoded_text = urllib.parse.quote(instruccion_ia)
-    encoded_img = urllib.parse.quote(f"Professional photography, {prompt_base}, 4k resolution")
+    encoded_img = urllib.parse.quote(f"Professional photography, {prompt_base}, 4k")
 
-    # 4. Respuesta para el JavaScript de mktg.php
+    # 4. Respuesta para mktg.php
     return {
         "status": "success",
         "prompt_generado": instruccion_ia,
