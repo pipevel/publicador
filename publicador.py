@@ -27,19 +27,13 @@ async def generar_contenido(
         f"Tema: {prompt_base}. "
         f"Inspiración: {sueno}."
     )
+
     return {
-    "status": "success",
-    "prompt_generado": texto_ia,
-    "links": {
-        "chatgpt": f"https://chat.openai.com/?q={urllib.parse.quote(texto_ia)}",
-        "gemini": f"https://gemini.google.com/app?prompt={urllib.parse.quote(prompt_base)}",
-        "dalle": f"https://chat.openai.com/?q={urllib.parse.quote('Genera una imagen para: ' + texto_ia)}"
+        "status": "success",
+        "prompt_generado": texto_ia,
+        "links": {
+            "chatgpt": f"https://chat.openai.com/?q={urllib.parse.quote(texto_ia)}",
+            "gemini": f"https://gemini.google.com/app?prompt={urllib.parse.quote(prompt_base)}",
+            "dalle": f"https://chat.openai.com/?q={urllib.parse.quote('Genera una imagen para: ' + texto_ia)}"
+        }
     }
-}
-```
-
----
-
-## El nuevo flujo
-```
-mktg.php → consulta MySQL local → pasa datos al JS → JS llama Render → Render genera contenido
