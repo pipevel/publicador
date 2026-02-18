@@ -33,7 +33,7 @@ async def generar_contenido(
     "links": {
         "chatgpt": f"https://chat.openai.com/?q={urllib.parse.quote(texto_ia)}",
         "gemini": f"https://gemini.google.com/app?prompt={urllib.parse.quote(prompt_base)}",
-        "dalle": f"https://chat.openai.com/?q={urllib.parse.quote('Genera una imagen: ' + texto_ia)}"
+        "dalle": f"https://chat.openai.com/?q={urllib.parse.quote('Genera una imagen para: ' + texto_ia)}"
     }
 }
 ```
