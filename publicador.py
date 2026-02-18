@@ -20,9 +20,9 @@ async def generar_contenido(
 ):
 
     try:
-        response = requests.post(
+        response = requests.get(
     "https://lapapaya.org/mktg/api_bridge.php",
-    json={"user_id": user_id},
+    params={"user_id": user_id},
     timeout=10
 )
 
