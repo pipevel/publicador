@@ -15,28 +15,33 @@ app.add_middleware(
 
 @app.post("/generar-contenido")
 async def generar_contenido(user_id: int = Form(...), target_platform: str = Form(...)):
+    # 1. Conexión con el Puente PHP
     try:
-        # Forzamos que la URL lleve el ID claramente
         url = f"https://lapapaya.org/mktg/api_bridge.php?user_id={user_id}"
         headers = {'User-Agent': 'Mozilla/5.0'}
-        
         response = requests.get(url, headers=headers, timeout=10)
-        
-        # LOG PARA RENDER: Esto te dirá qué está respondiendo el PHP exactamente
-        print(f"DEBUG PHP: {response.text}") 
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=500, 
+                detail=f"PHP error {response.status_code}: {response.text}"
+            )
         
         user_data = response.json()
+        
     except Exception as e:
-        # Si el PHP falla, devolvemos el error exacto para saber qué pasa
-        raise HTTPException(status_code=500, detail=f"Error en puente PHP: {str(e)}")
+        # Esto captura el error "line 1 column 1" y te muestra la respuesta real del PHP
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error en puente PHP o JSON inválido: {str(e)}"
+        )
 
+    # 2. Validar que el PHP encontró al usuario
     if user_data.get("status") != "success":
-        # Aquí es donde te salía "Usuario no encontrado"
-        raise HTTPException(status_code=500, detail=f"PHP dice: {user_data.get('error', 'Error desconocido')}")
+        error_msg = user_data.get("error", "Usuario no encontrado")
+        raise HTTPException(status_code=500, detail=f"Error de base de datos: {error_msg}")
 
-    # ... resto del código igual ...
-
-    # 2. Generar el prompt basado en los datos reales del usuario
+    # 3. Generar el contenido
     prompts = user_data.get("prompts", [])
     prompt_base = random.choice(prompts) if prompts else "Sostenibilidad y comunidad"
     sueno = user_data.get("sueno", "Emprender con propósito")
