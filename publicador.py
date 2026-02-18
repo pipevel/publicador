@@ -6,7 +6,7 @@ import requests
 
 app = FastAPI(title="Publicador La Papaya")
 
-# Permitir que tu web lapapaya.org hable con este servidor
+# Permitir comunicación con lapapaya.org
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,12 +18,13 @@ app.add_middleware(
 def obtener_datos_usuario(user_id):
     """Consulta el bridge PHP para traer los datos reales de la DB"""
     try:
+        # URL validada que devuelve el JSON del usuario
         url = f"https://lapapaya.org/mktg/api_bridge.php?action=python_query&user_id={user_id}"
-        response = requests.get(url, timeout=12) # Tiempo de espera prudente
+        response = requests.get(url, timeout=12)
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        print(f"Error conectando con el puente: {e}")
+        print(f"Error en el puente: {e}")
         return None
 
 @app.post("/generar-contenido")
@@ -31,41 +32,41 @@ async def generar_contenido(
     user_id: int = Form(...), 
     target_platform: str = Form(...)
 ):
-    # 1. Obtener la info del usuario (sueños y prompts)
-    datos = obtener_datos_usuario(user_id)
+    # 1. Obtener datos del bridge
+    user_data = obtener_datos_usuario(user_id)
     
-    if not datos or datos.get("status") != "success":
+    if not user_data or user_data.get("status") != "success":
+        # Este es el error que viste en tu última prueba
         raise HTTPException(status_code=500, detail="No se pudo sincronizar con la base de datos de La Papaya")
 
-    # 2. Extraer los datos que vimos en el bridge
-    prompts_disponibles = datos.get("prompts", [])
-    prompt_base = random.choice(prompts_disponibles) if prompts_disponibles else "Sostenibilidad y comunidad urbana"
-    sueno_usuario = datos.get("sueno", "Un futuro mejor para todos")
-    
-    # 3. Personalización según la red social
-    plataforma = target_platform.lower()
-    estilos = {
+    # 2. Extraer info (Sueños y Prompts activos)
+    prompts = user_data.get("prompts", [])
+    prompt_base = random.choice(prompts) if prompts else "Sostenibilidad y comunidad urbana"
+    user_sueno = user_data.get("sueno", "Emprender con propósito")
+    platform = target_platform.lower()
+
+    # 3. Personalización por red social
+    config = {
         "instagram": "visual e inspirador",
-        "facebook": "comunitario y conversacional",
+        "facebook": "comunitario y cercano",
         "linkedin": "profesional y estratégico",
         "tiktok": "dinámico y divertido",
         "twitter": "directo y conciso",
         "whatsapp": "personal y motivador"
     }
-    estilo = estilos.get(plataforma, "creativo")
+    estilo = config.get(platform, "creativo")
 
     # 4. Crear el Prompt Maestro
     texto_ia = (
-        f"Actúa como experto en marketing digital. Crea un post para {plataforma.upper()} "
+        f"Actúa como experto en marketing. Crea un post para {platform.upper()} "
         f"con tono {estilo}. Tema: {prompt_base}. "
-        f"Conecta con este sueño: {sueno_usuario}. Incluye hashtags y CTA."
+        f"Conéctalo con este sueño: {user_sueno}. Incluye CTA y hashtags."
     )
     
-    # 5. Codificar para los botones de ayuda
+    # 5. Codificar para los botones
     encoded_text = urllib.parse.quote(texto_ia)
-    encoded_img = urllib.parse.quote(f"Professional photography, {prompt_base}, high resolution")
+    encoded_img = urllib.parse.quote(f"Professional photography, {prompt_base}, high quality")
 
-    # 6. Respuesta final para el JavaScript
     return {
         "status": "success",
         "prompt_generado": texto_ia,
