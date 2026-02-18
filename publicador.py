@@ -17,14 +17,19 @@ app.add_middleware(
 async def generar_contenido(user_id: int = Form(...), target_platform: str = Form(...)):
     # 1. Intentar conectar con la base de datos de La Papaya
     try:
+        # Asegúrate de que esta URL sea exactamente la que configuraste en tu servidor
         url = f"https://lapapaya.org/mktg/api_bridge.php?action=python_query&user_id={user_id}"
-        # Añadimos un User-Agent para que el servidor PHP no rechace la petición
         headers = {'User-Agent': 'Mozilla/5.0'}
         response = requests.get(url, headers=headers, timeout=10)
+        
+        # Esto imprimirá en Render qué está diciendo el PHP (útil para debugear)
+        print(f"Respuesta PHP: {response.text}") 
+        
         user_data = response.json()
     except Exception as e:
-        print(f"Error de conexión: {e}")
-        raise HTTPException(status_code=500, detail="El puente PHP no responde")
+        print(f"Error de parsing: {e}")
+        # Este es el mensaje que verás en el alert de la web
+        raise HTTPException(status_code=500, detail="El puente PHP devolvió un formato incorrecto")
 
     if user_data.get("status") != "success":
         raise HTTPException(status_code=500, detail="Usuario no encontrado en la base de datos")
