@@ -39,4 +39,4 @@ async def generar_contenido(
             "gemini": f"https://gemini.google.com/app?prompt={urllib.parse.quote(texto_ia)}",
             "dalle": f"https://chat.openai.com/?q={urllib.parse.quote('Crea una imagen visualmente impactante y profesional sobre: ' + tema)}"
         }
-    }}
+    }
